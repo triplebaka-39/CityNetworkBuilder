@@ -21,6 +21,12 @@ env/
 # Packaging and build output
 build/
 dist/
+*.exe
+*.dll
+*.pyd
+*.toc
+*.pkg
+*.pyz
 *.egg-info/
 .eggs/
 pip-wheel-metadata/
