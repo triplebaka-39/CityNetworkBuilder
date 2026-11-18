@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from city_canvas import CityCanvas, ToolName
 from graph import Graph, Road
+from sounds import Sounds
 from prim import (
     PrimResult,
     PrimStep,
@@ -38,6 +39,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(980, 620)
         self.resize(1360, 800)
         self.graph = Graph()
+        self.sounds = Sounds()
         self._next_district_number = 1
         self._road_start_id: str | None = None
         self._prim_result: PrimResult | None = None
@@ -387,7 +389,9 @@ class MainWindow(QMainWindow):
             )
         except ValueError as error:
             QMessageBox.warning(self, "Unable to Add District", str(error))
+            self.sounds.play("error")
             return
+        self.sounds.play("city_add")
         self._next_district_number += 1
         if district_position != requested_position:
             self.canvas.ensure_position_visible(district_position)
@@ -402,7 +406,10 @@ class MainWindow(QMainWindow):
         self._road_start_id = None
         self._set_active_tool(None)
         self.canvas.clear_selection()
+        had_districts = bool(self.graph.get_districts())
         self.graph.clear()
+        if had_districts:
+            self.sounds.play("clear")
 
     def generate_random_network(self) -> None:
         if self._manual_mode_active:
@@ -491,6 +498,7 @@ class MainWindow(QMainWindow):
         self._update_edit_buttons()
         self._update_algorithm_controls()
         self._update_manual_controls()
+        self.sounds.play("city_add")
         self._show_status_message(
             f"Generated {district_count} districts and "
             f"{len(generated_roads)} roads."
@@ -870,6 +878,7 @@ class MainWindow(QMainWindow):
             f"Manual Mode: {message} "
             f"Total cost stays at {self._manual_total_cost:g}."
         )
+        self.sounds.play("error")
         self._show_status_message(message)
         self.canvas.show_step_notification(
             self._manual_rejection_notification(message, road)
@@ -1375,6 +1384,8 @@ class MainWindow(QMainWindow):
             self.graph.delete_road(*road_key)
         except ValueError as error:
             self._show_error("Unable to Delete Road", str(error))
+        else:
+            self.sounds.play("road_remove")
 
     def delete_selected_district(self) -> None:
         if self._manual_mode_active:
@@ -1399,6 +1410,8 @@ class MainWindow(QMainWindow):
             self.graph.delete_district(district_id)
         except ValueError as error:
             self._show_error("Unable to Delete District", str(error))
+        else:
+            self.sounds.play("city_remove")
 
     def _toggle_tool(self, tool: ToolName) -> None:
         if self._manual_mode_active:
@@ -1475,6 +1488,7 @@ class MainWindow(QMainWindow):
             self._clear_pending_road()
             return
 
+        self.sounds.play("road_add")
         self._clear_pending_road()
         if self.canvas.active_tool == "add_road":
             self._show_status_message(
@@ -1542,6 +1556,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(message, 4000)
 
     def _show_error(self, title: str, message: str) -> None:
+        self.sounds.play("error")
         QMessageBox.warning(self, title, message)
 
 
